@@ -77,7 +77,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                             }, new Action1<Throwable>() {
                                 @Override
                                 public void call(Throwable throwable) {
-
+                                    Toast.makeText(MainActivity.this, ""+throwable.getMessage(), Toast.LENGTH_SHORT).show();
                                 }
                             }, new Action0() {
                                 @Override
