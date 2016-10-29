@@ -83,6 +83,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                 @Override
                                 public void call() {
                                     Toast.makeText(MainActivity.this, "Completed!", Toast.LENGTH_SHORT).show();
+                                    System.out.println("Test the code complete function");
                                 }
                             });
                     break;
