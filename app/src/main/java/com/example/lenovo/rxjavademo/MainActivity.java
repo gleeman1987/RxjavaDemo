@@ -14,11 +14,11 @@ import android.widget.Toast;
 import butterknife.Bind;
 import butterknife.ButterKnife;
 import rx.Observable;
+import rx.Producer;
 import rx.Subscriber;
 import rx.Subscription;
 import rx.android.schedulers.AndroidSchedulers;
-import rx.functions.Action0;
-import rx.functions.Action1;
+import rx.functions.Func1;
 import rx.schedulers.Schedulers;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
@@ -34,7 +34,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Bind(R.id.tv_result)
     TextView tvResult;
     private SharedPreferences sharedPreferences;
-    private Observable<String> stringObservable;
+    private Observable<Byte> stringObservable;
     private String content;
     private String name;
     private Subscription subscription;
@@ -47,14 +47,27 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         btnSpRead.setOnClickListener(this);
         btnSpWrite.setOnClickListener(this);
         sharedPreferences = getSharedPreferences("config", Context.MODE_PRIVATE);
-        stringObservable = Observable.create(new Observable.OnSubscribe<String>() {
-            @Override
-            public void call(Subscriber<? super String> subscriber) {
-                String name = Thread.currentThread().getName();
-                subscriber.onNext(name);
-                subscriber.onCompleted();
-            }
-        }).subscribeOn(Schedulers.io());
+        String[] strings = {"dskhs", "klhdsewjkhe3", "hjqhggu"};
+        stringObservable = Observable.from(strings)
+                .filter(new Func1<String, Boolean>() {
+                    @Override
+                    public Boolean call(String s) {
+                        return s.length() > 3;
+                    }
+                })
+                .flatMap(new Func1<String, Observable<Byte>>() {
+                    @Override
+                    public Observable<Byte> call(String s) {
+                        byte[] bytes = s.getBytes();
+                        Byte[] bytes1 = new  Byte[bytes.length];
+                        for (int i = 0; i < bytes.length; i++) {
+                            bytes1[i] = bytes[i];
+                        }
+                        return Observable.from(bytes1);
+                    }
+                })
+//                .throttleFirst(15, TimeUnit.MILLISECONDS)
+                .subscribeOn(Schedulers.io());
     }
 
     @Override
@@ -68,22 +81,36 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     break;
                 case R.id.btn_sp_write:
                     subscription = stringObservable.observeOn(AndroidSchedulers.mainThread())
-                            .subscribe(new Action1<String>() {
+//                            .throttleFirst(15,TimeUnit.MILLISECONDS)
+                            .subscribe(new Subscriber<Byte>() {
                                 @Override
-                                public void call(String s) {
-                                    tvResult.setText(s);
-                                    Toast.makeText(MainActivity.this, "" + Thread.currentThread().getName(), Toast.LENGTH_SHORT).show();
+                                public void onCompleted() {
+                                    Utils.showLog("onCompleted " + Thread.currentThread().getName());
                                 }
-                            }, new Action1<Throwable>() {
+
                                 @Override
-                                public void call(Throwable throwable) {
-                                    Toast.makeText(MainActivity.this, ""+throwable.getMessage(), Toast.LENGTH_SHORT).show();
+                                public void onError(Throwable throwable) {
+
                                 }
-                            }, new Action0() {
+
                                 @Override
-                                public void call() {
-                                    Toast.makeText(MainActivity.this, "Completed!", Toast.LENGTH_SHORT).show();
-                                    System.out.println("Test the code complete function");
+                                public void onNext(Byte s) {
+                                    tvResult.setText(Thread.currentThread().getName());
+                                    Utils.showLog(s.toString());
+                                }
+
+                                @Override
+                                public void onStart() {
+                                    super.onStart();
+                                    String name = Thread.currentThread().getName();
+                                    Utils.showLog(name);
+                                    Toast.makeText(MainActivity.this, "onStart " + name, Toast.LENGTH_SHORT).show();
+                                }
+
+                                @Override
+                                public void setProducer(Producer p) {
+                                    super.setProducer(p);
+                                    Utils.showLog("setProducer " + Thread.currentThread().getName());
                                 }
                             });
                     break;
